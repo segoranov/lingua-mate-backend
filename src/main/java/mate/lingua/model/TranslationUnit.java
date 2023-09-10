@@ -1,5 +1,6 @@
 package mate.lingua.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,5 +21,6 @@ public class TranslationUnit {
     private String translation;
     @ManyToOne
     @JoinColumn(name = "learning_dataset_id", nullable = false)
+    @JsonIgnore
     private LearningDataset learningDataset;
 }

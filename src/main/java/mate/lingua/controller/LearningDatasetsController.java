@@ -1,7 +1,10 @@
 package mate.lingua.controller;
 
+import lombok.AllArgsConstructor;
 import mate.lingua.model.LearningDataset;
 import mate.lingua.model.TranslationUnit;
+import mate.lingua.service.LearningDatasetService;
+import mate.lingua.service.TranslationUnitService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -10,12 +13,16 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/learning-datasets")
+@AllArgsConstructor
 public class LearningDatasetsController {
 
-    @GetMapping(consumes = "application/json", produces = "application/json")
+    private TranslationUnitService translationUnitService;
+    private LearningDatasetService learningDatasetService;
+
+    @GetMapping(produces = "application/json")
     public ResponseEntity<List<LearningDataset>> getLearningDatasets() {
-        // TODO
-        return null;
+        List<LearningDataset> learningDatasets = learningDatasetService.getLearningDatasets();
+        return ResponseEntity.ok(learningDatasets);
     }
 
     @GetMapping(value = "/{learningDatasetId}", produces = "application/json")
@@ -50,9 +57,12 @@ public class LearningDatasetsController {
     }
 
     @GetMapping(value = "/{learningDatasetId}/translation-units", produces = "application/json")
-    public ResponseEntity<TranslationUnit> getTranslationUnits(@PathVariable("learningDatasetId") Long learningDatasetId) {
-        // TODO
-        return null;
+    public ResponseEntity<List<TranslationUnit>> getTranslationUnits(@PathVariable("learningDatasetId") Long learningDatasetId) {
+        return learningDatasetService
+                .getById(learningDatasetId)
+                .map(learningDataset -> ResponseEntity.ok(learningDataset.getTranslationUnits()))
+                .orElseGet(() -> ResponseEntity.notFound().build());
+
     }
 
     @DeleteMapping(value = "/{learningDatasetId}/translation-units/{translationUnitId}")
