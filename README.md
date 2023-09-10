@@ -1,0 +1,2 @@
+# Overview
+Lingua Mate is a language learning application designed to make language acquisition a smooth and engaging process. The backend of Lingua Mate focuses on enabling the user to create learning datasets and translation units that serve as the building blocks for various flash-card games. Through this backend, users can manage datasets, customize their learning experience, and keep track of their progress.
