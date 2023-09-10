@@ -8,7 +8,9 @@ import mate.lingua.service.TranslationUnitService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.net.URI;
 import java.util.List;
 
 @RestController
@@ -39,19 +41,30 @@ public class LearningDatasetsController {
 
     @PatchMapping(value = "/{learningDatasetId}", consumes = "application/json", produces = "application/json")
     public ResponseEntity<LearningDataset> patchLearningDataset(@PathVariable("learningDatasetId") Long learningDatasetId) {
-        // TODO
+        // TODO (add the partial patch object as request body)
         return null;
     }
 
     @PostMapping(consumes = "application/json", produces = "application/json")
-    public ResponseEntity<LearningDataset> createLearningDataset() {
-        // TODO
-        return null;
+    public ResponseEntity<LearningDataset> createLearningDataset(@RequestBody LearningDataset learningDataset) {
+        LearningDataset savedLearningDataset = learningDatasetService.save(learningDataset);
+
+        URI location = ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(savedLearningDataset.getId())
+                .toUri();
+
+        return ResponseEntity
+                .created(location)
+                .body(learningDataset);
     }
 
     @PostMapping(value = "/{learningDatasetId}/translation-units", consumes = "application/json",
             produces = "application/json")
-    public ResponseEntity<TranslationUnit> createTranslationUnit(@PathVariable("learningDatasetId") Long learningDatasetId) {
+    public ResponseEntity<TranslationUnit> createTranslationUnit(
+            @PathVariable("learningDatasetId") Long learningDatasetId,
+            @RequestBody TranslationUnit translationUnit) {
         // TODO
         return null;
     }

@@ -10,4 +10,6 @@ public interface LearningDatasetService {
     List<LearningDataset> getLearningDatasets();
 
     Optional<LearningDataset> getById(Long id);
+
+    LearningDataset save(LearningDataset learningDataset);
 }
