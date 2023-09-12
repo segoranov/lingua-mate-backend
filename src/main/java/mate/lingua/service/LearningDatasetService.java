@@ -12,4 +12,6 @@ public interface LearningDatasetService {
     Optional<LearningDataset> getById(Long id);
 
     LearningDataset save(LearningDataset learningDataset);
+
+    void deleteById(Long learningDatasetId);
 }

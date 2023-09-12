@@ -3,7 +3,6 @@ package mate.lingua.service;
 import lombok.AllArgsConstructor;
 import mate.lingua.model.LearningDataset;
 import mate.lingua.repository.LearningDatasetRepository;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -28,5 +27,10 @@ public class LearningDatasetServiceImpl implements LearningDatasetService {
     @Override
     public LearningDataset save(LearningDataset learningDataset) {
         return learningDatasetRepository.save(learningDataset);
+    }
+
+    @Override
+    public void deleteById(Long learningDatasetId) {
+        learningDatasetRepository.deleteById(learningDatasetId);
     }
 }

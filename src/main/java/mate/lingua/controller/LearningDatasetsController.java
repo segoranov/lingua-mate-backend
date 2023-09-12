@@ -12,6 +12,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/v1/learning-datasets")
@@ -29,14 +30,21 @@ public class LearningDatasetsController {
 
     @GetMapping(value = "/{learningDatasetId}", produces = "application/json")
     public ResponseEntity<LearningDataset> getLearningDataset(@PathVariable("learningDatasetId") Long learningDatasetId) {
-        // TODO
-        return null;
+        if (learningDatasetService.getById(learningDatasetId).isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(learningDatasetService.getById(learningDatasetId).get());
     }
 
     @DeleteMapping(value = "/{learningDatasetId}")
     @ResponseStatus(value = HttpStatus.NO_CONTENT)
-    public void deleteLearningDataset(@PathVariable("learningDatasetId") Long learningDatasetId) {
-        // TODO
+    public ResponseEntity<Void> deleteLearningDataset(@PathVariable("learningDatasetId") Long learningDatasetId) {
+        if (learningDatasetService.getById(learningDatasetId).isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        learningDatasetService.deleteById(learningDatasetId);
+        return ResponseEntity.noContent().build();
     }
 
     @PatchMapping(value = "/{learningDatasetId}", consumes = "application/json", produces = "application/json")
@@ -65,8 +73,25 @@ public class LearningDatasetsController {
     public ResponseEntity<TranslationUnit> createTranslationUnit(
             @PathVariable("learningDatasetId") Long learningDatasetId,
             @RequestBody TranslationUnit translationUnit) {
-        // TODO
-        return null;
+
+        Optional<LearningDataset> optionalLearningDataset = learningDatasetService.getById(learningDatasetId);
+        if (optionalLearningDataset.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        LearningDataset learningDataset = optionalLearningDataset.get();
+        translationUnit.setLearningDataset(learningDataset);
+        TranslationUnit savedTranslationUnit = translationUnitService.save(translationUnit);
+
+        URI location = ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(savedTranslationUnit.getId())
+                .toUri();
+
+        return ResponseEntity
+                .created(location)
+                .body(savedTranslationUnit);
     }
 
     @GetMapping(value = "/{learningDatasetId}/translation-units", produces = "application/json")
@@ -75,14 +100,23 @@ public class LearningDatasetsController {
                 .getById(learningDatasetId)
                 .map(learningDataset -> ResponseEntity.ok(learningDataset.getTranslationUnits()))
                 .orElseGet(() -> ResponseEntity.notFound().build());
-
     }
 
     @DeleteMapping(value = "/{learningDatasetId}/translation-units/{translationUnitId}")
     @ResponseStatus(value = HttpStatus.NO_CONTENT)
-    public void deleteTranslationUnit(@PathVariable("learningDatasetId") Long learningDatasetId,
-                                      @PathVariable("translationUnitId") Long translationUnitId) {
-        // TODO
+    public ResponseEntity<Void> deleteTranslationUnit(@PathVariable("learningDatasetId") Long learningDatasetId,
+                                                      @PathVariable("translationUnitId") Long translationUnitId) {
+        if (learningDatasetService.getById(learningDatasetId).isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        if (translationUnitService.getById(translationUnitId).isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+
+        translationUnitService.deleteById(translationUnitId);
+        return ResponseEntity.noContent().build();
     }
 
     @PatchMapping(
