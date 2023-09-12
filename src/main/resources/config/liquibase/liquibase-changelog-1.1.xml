@@ -1,0 +1,85 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.4.xsd">
+
+    <changeSet id="3" author="SG">
+        <insert tableName="learning_dataset">
+            <column name="name" value="Geld"/>
+        </insert>
+        <insert tableName="learning_dataset">
+            <column name="name" value="Gesundheit"/>
+        </insert>
+        <insert tableName="learning_dataset">
+            <column name="name" value="Sport"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="4" author="SG">
+        <insert tableName="translation_unit">
+            <column name="text" value="das Geld"/>
+            <column name="translation" value="Money"/>
+            <column name="learning_dataset_id" valueNumeric="1"/>
+        </insert>
+        <insert tableName="translation_unit">
+            <column name="text" value="die Kreditkarte"/>
+            <column name="translation" value="Credit Card"/>
+            <column name="learning_dataset_id" valueNumeric="1"/>
+        </insert>
+        <insert tableName="translation_unit">
+            <column name="text" value="die Rechnung"/>
+            <column name="translation" value="Bill"/>
+            <column name="learning_dataset_id" valueNumeric="1"/>
+        </insert>
+        <insert tableName="translation_unit">
+            <column name="text" value="Ich möchte bezahlen"/>
+            <column name="translation" value="I would like to pay"/>
+            <column name="learning_dataset_id" valueNumeric="1"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="5" author="SG">
+        <insert tableName="translation_unit">
+            <column name="text" value="der Arzt"/>
+            <column name="translation" value="Doctor"/>
+            <column name="learning_dataset_id" valueNumeric="2"/>
+        </insert>
+        <insert tableName="translation_unit">
+            <column name="text" value="die Medizin"/>
+            <column name="translation" value="Medicine"/>
+            <column name="learning_dataset_id" valueNumeric="2"/>
+        </insert>
+        <insert tableName="translation_unit">
+            <column name="text" value="das Krankenhaus"/>
+            <column name="translation" value="Hospital"/>
+            <column name="learning_dataset_id" valueNumeric="2"/>
+        </insert>
+        <insert tableName="translation_unit">
+            <column name="text" value="Mir geht es nicht gut"/>
+            <column name="translation" value="I am not feeling well"/>
+            <column name="learning_dataset_id" valueNumeric="2"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="6" author="SG">
+        <insert tableName="translation_unit">
+            <column name="text" value="der Fußball"/>
+            <column name="translation" value="Soccer"/>
+            <column name="learning_dataset_id" valueNumeric="3"/>
+        </insert>
+        <insert tableName="translation_unit">
+            <column name="text" value="das Fitnessstudio"/>
+            <column name="translation" value="Gym"/>
+            <column name="learning_dataset_id" valueNumeric="3"/>
+        </insert>
+        <insert tableName="translation_unit">
+            <column name="text" value="das Schwimmen"/>
+            <column name="translation" value="Swimming"/>
+            <column name="learning_dataset_id" valueNumeric="3"/>
+        </insert>
+        <insert tableName="translation_unit">
+            <column name="text" value="Ich gehe gern joggen"/>
+            <column name="translation" value="I like to go jogging"/>
+            <column name="learning_dataset_id" valueNumeric="3"/>
+        </insert>
+    </changeSet>
+</databaseChangeLog>

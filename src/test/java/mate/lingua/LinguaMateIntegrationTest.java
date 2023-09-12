@@ -60,7 +60,7 @@ public class LinguaMateIntegrationTest {
                         .content("{\"name\": \"Dataset 1\"}"))
                 .andExpect(status().isCreated())
                 .andExpect(header().string("Location", matchesPattern("http://.+/api/v1/learning-datasets/\\d+")))
-                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.id").value(4)) // because of test data generated in liquibase changelog 1.1
                 .andExpect(jsonPath("$.name").value("Dataset 1"));
     }
 
