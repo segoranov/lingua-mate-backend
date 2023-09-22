@@ -1,6 +1,7 @@
 package mate.lingua.service;
 
 import mate.lingua.model.FlashCardsGame;
+import mate.lingua.model.FlashCardsGameState;
 
 import java.util.List;
 import java.util.Optional;
@@ -13,4 +14,6 @@ public interface FlashCardsGameService {
     List<FlashCardsGame> getFlashCardsGames();
 
     boolean deleteById(long id);
+
+    FlashCardsGame updateState(long flashCardsGameId, FlashCardsGameState newFlashCardsGameState);
 }

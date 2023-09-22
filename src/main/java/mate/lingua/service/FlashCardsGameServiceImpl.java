@@ -1,18 +1,16 @@
 package mate.lingua.service;
 
 import lombok.AllArgsConstructor;
-import mate.lingua.Constants;
 import mate.lingua.exception.FlashCardsGameAlreadyExistsException;
 import mate.lingua.exception.NoTranslationUnitsToStartFlashCardsGameException;
-import mate.lingua.exception.ResourceNotFoundException;
 import mate.lingua.model.FlashCardsGame;
 import mate.lingua.model.FlashCardsGameState;
 import mate.lingua.model.LearningDataset;
 import mate.lingua.model.TranslationUnit;
 import mate.lingua.repository.FlashCardsGameRepository;
+import mate.lingua.validation.FlashCardsGameStateValidator;
 import org.springframework.stereotype.Service;
 
-import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -37,13 +35,8 @@ public class FlashCardsGameServiceImpl implements FlashCardsGameService {
     }
 
     private void validateLearningDataset(long learningDatasetId) {
-        Optional<LearningDataset> optionalLearningDataset = learningDatasetService.getById(learningDatasetId);
-        if (optionalLearningDataset.isEmpty()) {
-            throw new ResourceNotFoundException(MessageFormat.format(Constants.Errors.LEARNING_DATASET_WITH_ID_0_DOES_NOT_EXIST,
-                    learningDatasetId));
-        }
+        LearningDataset learningDataset = learningDatasetService.getById(learningDatasetId).get();
 
-        LearningDataset learningDataset = optionalLearningDataset.get();
         if (learningDataset.getFlashCardsGame() != null) {
             throw new FlashCardsGameAlreadyExistsException();
         }
@@ -85,5 +78,13 @@ public class FlashCardsGameServiceImpl implements FlashCardsGameService {
             return true;
         }
         return false;
+    }
+
+    @Override
+    public FlashCardsGame updateState(long flashCardsGameId, FlashCardsGameState newFlashCardsGameState) {
+        FlashCardsGame flashCardsGame = flashCardsGameRepository.findById(flashCardsGameId).get();
+        new FlashCardsGameStateValidator(flashCardsGame.getLearningDataset(), newFlashCardsGameState).validate();
+        flashCardsGame.setFlashCardsGameState(newFlashCardsGameState);
+        return flashCardsGameRepository.save(flashCardsGame);
     }
 }

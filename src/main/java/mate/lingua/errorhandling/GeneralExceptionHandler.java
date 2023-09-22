@@ -3,6 +3,7 @@ package mate.lingua.errorhandling;
 
 import mate.lingua.Constants;
 import mate.lingua.exception.FlashCardsGameAlreadyExistsException;
+import mate.lingua.exception.InvalidFlashCardsGameStateException;
 import mate.lingua.exception.NoTranslationUnitsToStartFlashCardsGameException;
 import mate.lingua.exception.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
@@ -37,6 +38,16 @@ public class GeneralExceptionHandler {
                 .builder()
                 .timestamp(new Date())
                 .error(Constants.Errors.CANNOT_START_FLASH_CARDS_GAME_BECAUSE_NO_TRANSLATION_UNITS_EXIST_IN_LEARNING_DATASET)
+                .build();
+    }
+
+    @ExceptionHandler(InvalidFlashCardsGameStateException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiError handleInvalidFlashCardsGameStateException(InvalidFlashCardsGameStateException ex) {
+        return ApiError
+                .builder()
+                .timestamp(new Date())
+                .error(ex.getMessage())
                 .build();
     }
 }

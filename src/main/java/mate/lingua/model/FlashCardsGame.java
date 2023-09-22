@@ -5,10 +5,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.Type;
 
 
@@ -31,5 +28,6 @@ public class FlashCardsGame {
     @Column(columnDefinition = "jsonb", nullable = false, name = "state")
     @JsonProperty("state")
     @Type(JsonBinaryType.class)
+    @Setter
     private FlashCardsGameState flashCardsGameState;
 }
