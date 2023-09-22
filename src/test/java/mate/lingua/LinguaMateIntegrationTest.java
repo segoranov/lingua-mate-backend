@@ -63,10 +63,10 @@ public class LinguaMateIntegrationTest {
     }
 
     @Test
-    void endToEndTest_validate_basic_CRUD_operations() throws Exception {
+    void validate_basic_CRUD_operations() throws Exception {
         LearningDataset dataset1 = createLearningDataset("dataset1");
-        LearningDataset dataset2 = createLearningDataset("dataset1");
-        LearningDataset dataset3 = createLearningDataset("dataset1");
+        LearningDataset dataset2 = createLearningDataset("dataset2");
+        LearningDataset dataset3 = createLearningDataset("dataset3");
 
         // TODO test patch learning dataset
 
@@ -109,6 +109,36 @@ public class LinguaMateIntegrationTest {
         deleteLearningDataset(dataset1.getId());
         deleteLearningDataset(dataset2.getId());
         deleteLearningDataset(dataset3.getId());
+    }
+
+    @Test
+    void validate_flash_cards_game() throws Exception {
+        LearningDataset dataset1 = createLearningDataset("dataset4");
+        LearningDataset dataset2 = createLearningDataset("dataset5");
+        LearningDataset dataset3 = createLearningDataset("dataset6");
+
+        // TODO test patch learning dataset
+
+        TranslationUnit translationUnit1 =
+                createTranslationUnit(TranslationUnit.builder().text("testText1").translation("testTranslation1").build(),
+                        dataset1.getId());
+        TranslationUnit translationUnit2 =
+                createTranslationUnit(TranslationUnit.builder().text("testText2").translation("testTranslation3").build(),
+                        dataset1.getId());
+        TranslationUnit translationUnit3 =
+                createTranslationUnit(TranslationUnit.builder().text("testText3").translation("testTranslation3").build(),
+                        dataset2.getId());
+        TranslationUnit translationUnit4 =
+                createTranslationUnit(TranslationUnit.builder().text("testText4").translation("testTranslation4").build(),
+                        dataset2.getId());
+        TranslationUnit translationUnit5 =
+                createTranslationUnit(TranslationUnit.builder().text("testText5").translation("testTranslation5").build(),
+                        dataset3.getId());
+        TranslationUnit translationUnit6 =
+                createTranslationUnit(TranslationUnit.builder().text("testText6").translation("testTranslation6").build(),
+                        dataset3.getId());
+
+
     }
 
     private LearningDataset createLearningDataset(String name) throws Exception {

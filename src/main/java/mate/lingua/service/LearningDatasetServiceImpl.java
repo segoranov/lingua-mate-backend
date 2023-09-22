@@ -30,7 +30,11 @@ public class LearningDatasetServiceImpl implements LearningDatasetService {
     }
 
     @Override
-    public void deleteById(Long learningDatasetId) {
-        learningDatasetRepository.deleteById(learningDatasetId);
+    public boolean deleteById(Long learningDatasetId) {
+        if (learningDatasetRepository.existsById(learningDatasetId)) {
+            learningDatasetRepository.deleteById(learningDatasetId);
+            return true;
+        }
+        return false;
     }
 }

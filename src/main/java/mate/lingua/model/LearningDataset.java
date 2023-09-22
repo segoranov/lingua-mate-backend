@@ -22,7 +22,14 @@ public class LearningDataset {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "name", unique = true)
     private String name;
+
+    @OneToOne(mappedBy = "learningDataset")
+    @JsonIgnore
+    private FlashCardsGame flashCardsGame;
+
     @OneToMany(mappedBy = "learningDataset", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     private List<TranslationUnit> translationUnits;

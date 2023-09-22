@@ -13,5 +13,5 @@ public interface LearningDatasetService {
 
     LearningDataset save(LearningDataset learningDataset);
 
-    void deleteById(Long learningDatasetId);
+    boolean deleteById(Long learningDatasetId);
 }

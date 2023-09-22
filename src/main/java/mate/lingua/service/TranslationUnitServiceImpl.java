@@ -5,7 +5,6 @@ import mate.lingua.model.TranslationUnit;
 import mate.lingua.repository.TranslationUnitRepository;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -13,11 +12,6 @@ import java.util.Optional;
 public class TranslationUnitServiceImpl implements TranslationUnitService {
 
     private TranslationUnitRepository translationUnitRepository;
-
-    @Override
-    public List<TranslationUnit> getTranslationUnitsForLearningDataset(Long learningDatasetId) {
-        return translationUnitRepository.findAll();
-    }
 
     @Override
     public TranslationUnit save(TranslationUnit translationUnit) {
@@ -30,7 +24,11 @@ public class TranslationUnitServiceImpl implements TranslationUnitService {
     }
 
     @Override
-    public void deleteById(Long translationUnitId) {
-        translationUnitRepository.deleteById(translationUnitId);
+    public boolean deleteById(Long translationUnitId) {
+        if (translationUnitRepository.existsById(translationUnitId)) {
+            translationUnitRepository.deleteById(translationUnitId);
+            return true;
+        }
+        return false;
     }
 }

@@ -1,0 +1,20 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.4.xsd">
+
+    <changeSet id="7" author="SG">
+        <createTable tableName="flash_cards_game">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="state" type="jsonb">
+                <constraints nullable="false"/>
+            </column>
+            <column name="started_at" type="timestamp"/>
+            <column name="learning_dataset_id" type="bigint">
+                <constraints nullable="false" foreignKeyName="fk_flash_card_game_learning_dataset"
+                             referencedTableName="learning_dataset" referencedColumnNames="id"/>
+            </column>
+        </createTable>
+    </changeSet>
+</databaseChangeLog>
