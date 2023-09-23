@@ -117,174 +117,6 @@ public class LinguaMateIntegrationTest {
         deleteLearningDataset(dataset3.getId());
     }
 
-    @Test
-    void validate_flash_cards_game() throws Exception {
-        LearningDataset dataset = createLearningDataset("dataset4");
-
-        TranslationUnit translationUnit1 =
-                createTranslationUnit(TranslationUnit.builder().text("testText1").translation("testTranslation1").build(),
-                        dataset.getId());
-        TranslationUnit translationUnit2 =
-                createTranslationUnit(TranslationUnit.builder().text("testText2").translation("testTranslation3").build(),
-                        dataset.getId());
-        TranslationUnit translationUnit3 =
-                createTranslationUnit(TranslationUnit.builder().text("testText3").translation("testTranslation3").build(),
-                        dataset.getId());
-
-        mockMvc.perform(post("/api/v1/learning-datasets/" + dataset.getId() + "/actions/start-flashcards-game"))
-                .andExpect(status().isNoContent());
-        mockMvc.perform(post("/api/v1/learning-datasets/" + dataset.getId() + "/actions/start-flashcards-game"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value(Constants.Errors.FLASH_CARDS_GAME_FOR_LEARNING_DATASET_ALREADY_IN_PROGRESS));
-
-        validateFlashcardsGameState(dataset.getId(),
-                FlashCardsGameState
-                        .builder()
-                        .currentlyLearnedTranslationUnit(translationUnit1)
-                        .learnedTranslationUnitsIdsList(Collections.emptyList())
-                        .notLearnedTranslationUnitsIdsQueue(
-                                new LinkedList<>(List.of(translationUnit2.getId(), translationUnit3.getId())))
-                        .build());
-
-        mockMvc.perform(post("/api/v1/learning-datasets/" + dataset.getId() +
-                        "/active-flashcards-game/actions/mark-learned"))
-                .andExpect(status().isNoContent());
-
-        validateFlashcardsGameState(dataset.getId(),
-                FlashCardsGameState
-                        .builder()
-                        .currentlyLearnedTranslationUnit(translationUnit2)
-                        .learnedTranslationUnitsIdsList(List.of(translationUnit1.getId()))
-                        .notLearnedTranslationUnitsIdsQueue(
-                                new LinkedList<>(List.of(translationUnit3.getId())))
-                        .build());
-
-        mockMvc.perform(post("/api/v1/learning-datasets/" + dataset.getId() +
-                        "/active-flashcards-game/actions/mark-learned"))
-                .andExpect(status().isNoContent());
-
-        validateFlashcardsGameState(dataset.getId(),
-                FlashCardsGameState
-                        .builder()
-                        .currentlyLearnedTranslationUnit(translationUnit3)
-                        .learnedTranslationUnitsIdsList(List.of(translationUnit1.getId(), translationUnit2.getId()))
-                        .notLearnedTranslationUnitsIdsQueue(new LinkedList<>())
-                        .build());
-
-        mockMvc.perform(post("/api/v1/learning-datasets/" + dataset.getId() +
-                        "/active-flashcards-game/actions/mark-learned"))
-                .andExpect(status().isNoContent());
-
-        validateFlashcardsGameState(dataset.getId(),
-                FlashCardsGameState
-                        .builder()
-                        .currentlyLearnedTranslationUnit(null)
-                        .learnedTranslationUnitsIdsList(
-                                List.of(translationUnit1.getId(), translationUnit2.getId(), translationUnit3.getId()))
-                        .notLearnedTranslationUnitsIdsQueue(new LinkedList<>())
-                        .build());
-
-        mockMvc.perform(post("/api/v1/learning-datasets/" + dataset.getId() +
-                        "/active-flashcards-game/actions/unmark-learned")
-                        .contentType("application/json")
-                        .content(String.format("{\"id\": %d }", translationUnit1.getId())))
-                .andExpect(status().isNoContent());
-
-        validateFlashcardsGameState(dataset.getId(),
-                FlashCardsGameState
-                        .builder()
-                        .currentlyLearnedTranslationUnit(translationUnit1)
-                        .learnedTranslationUnitsIdsList(List.of(translationUnit2.getId(), translationUnit3.getId()))
-                        .notLearnedTranslationUnitsIdsQueue(new LinkedList<>())
-                        .build());
-
-        mockMvc.perform(post("/api/v1/learning-datasets/" + dataset.getId() +
-                        "/active-flashcards-game/actions/unmark-learned")
-                        .contentType("application/json")
-                        .content(String.format("{\"id\": %d }", translationUnit2.getId())))
-                .andExpect(status().isNoContent());
-
-        validateFlashcardsGameState(dataset.getId(),
-                FlashCardsGameState
-                        .builder()
-                        .currentlyLearnedTranslationUnit(translationUnit1)
-                        .learnedTranslationUnitsIdsList(List.of(translationUnit3.getId()))
-                        .notLearnedTranslationUnitsIdsQueue(new LinkedList<>(List.of(translationUnit2.getId())))
-                        .build());
-
-        mockMvc.perform(post("/api/v1/learning-datasets/" + dataset.getId() +
-                        "/active-flashcards-game/actions/repeat"))
-                .andExpect(status().isNoContent());
-
-        validateFlashcardsGameState(dataset.getId(),
-                FlashCardsGameState
-                        .builder()
-                        .currentlyLearnedTranslationUnit(translationUnit2)
-                        .learnedTranslationUnitsIdsList(List.of(translationUnit3.getId()))
-                        .notLearnedTranslationUnitsIdsQueue(new LinkedList<>(List.of(translationUnit1.getId())))
-                        .build());
-
-        mockMvc.perform(post("/api/v1/learning-datasets/" + dataset.getId() +
-                        "/active-flashcards-game/actions/repeat"))
-                .andExpect(status().isNoContent());
-
-        validateFlashcardsGameState(dataset.getId(),
-                FlashCardsGameState
-                        .builder()
-                        .currentlyLearnedTranslationUnit(translationUnit1)
-                        .learnedTranslationUnitsIdsList(List.of(translationUnit3.getId()))
-                        .notLearnedTranslationUnitsIdsQueue(new LinkedList<>(List.of(translationUnit2.getId())))
-                        .build());
-
-        mockMvc.perform(post("/api/v1/learning-datasets/" + dataset.getId() + "/actions/finish-flashcards-game"))
-                .andExpect(status().isNoContent());
-        mockMvc.perform(post("/api/v1/learning-datasets/" + dataset.getId() + "/actions/finish-flashcards-game"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value(Constants.Errors.NO_ACTIVE_FLASH_CARDS_GAME_EXISTS));
-    }
-
-    private void validateFlashcardsGameState(long learningDatasetId, FlashCardsGameState expectedFlashCardsGameState) throws Exception {
-        TranslationUnit currentlyLearnedTranslationUnit =
-                expectedFlashCardsGameState.getCurrentlyLearnedTranslationUnit();
-
-        ResultActions resultActions = mockMvc.perform(get("/api/v1/learning-datasets/" + learningDatasetId + "/active" +
-                        "-flashcards-game/state"))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType("application/json"));
-
-        if (currentlyLearnedTranslationUnit == null) {
-            resultActions
-                    .andExpect(jsonPath("$.currentlyLearnedTranslationUnit").value(Matchers.nullValue()));
-        } else {
-            resultActions
-                    .andExpect(jsonPath("$.currentlyLearnedTranslationUnit.id").value(currentlyLearnedTranslationUnit.getId()))
-                    .andExpect(jsonPath("$.currentlyLearnedTranslationUnit.text").value(currentlyLearnedTranslationUnit.getText()))
-                    .andExpect(jsonPath("$.currentlyLearnedTranslationUnit.translation").value(currentlyLearnedTranslationUnit.getTranslation()));
-        }
-
-        Queue<Long> notLearnedTranslationUnitsIdsQueue =
-                expectedFlashCardsGameState.getNotLearnedTranslationUnitsIdsQueue();
-        if (notLearnedTranslationUnitsIdsQueue.isEmpty()) {
-            resultActions.andExpect(jsonPath("$.notLearnedTranslationUnitsIds").isEmpty());
-        } else {
-            for (int el = 0; el < notLearnedTranslationUnitsIdsQueue.size(); el++) {
-                String path = String.format("$.notLearnedTranslationUnitsIds[%d]", el);
-                long id = notLearnedTranslationUnitsIdsQueue.poll();
-                resultActions.andExpect(jsonPath(path).value(id));
-            }
-        }
-
-        List<Long> learnedTranslationUnitsIdsList = expectedFlashCardsGameState.getLearnedTranslationUnitsIdsList();
-        if (learnedTranslationUnitsIdsList.isEmpty()) {
-            resultActions.andExpect(jsonPath("$.learnedTranslationUnitsIds").isEmpty());
-        } else {
-            for (int el = 0; el < learnedTranslationUnitsIdsList.size(); el++) {
-                String path = String.format("$.learnedTranslationUnitsIds[%d]", el);
-                resultActions.andExpect(jsonPath(path).value(learnedTranslationUnitsIdsList.get(el)));
-            }
-        }
-    }
-
     private LearningDataset createLearningDataset(String name) throws Exception {
         String content = String.format("{\"name\": \"%s\"}", name);
         String datasetStr = mockMvc.perform(post("/api/v1/learning-datasets")
@@ -331,5 +163,207 @@ public class LinguaMateIntegrationTest {
                 .andExpect(status().isNoContent());
         mockMvc.perform(delete("/api/v1/learning-datasets/" + learningDatasetId))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void validate_flash_cards_game() throws Exception {
+        LearningDataset dataset = createLearningDataset("dataset4");
+
+        TranslationUnit translationUnit1 =
+                createTranslationUnit(TranslationUnit.builder().text("testText1").translation("testTranslation1").build(),
+                        dataset.getId());
+        TranslationUnit translationUnit2 =
+                createTranslationUnit(TranslationUnit.builder().text("testText2").translation("testTranslation3").build(),
+                        dataset.getId());
+        TranslationUnit translationUnit3 =
+                createTranslationUnit(TranslationUnit.builder().text("testText3").translation("testTranslation3").build(),
+                        dataset.getId());
+
+        startGameWithoutExpectingError(dataset);
+        startGameExpectingGameAlreadyInProgressError(dataset);
+
+        validateFlashcardsGameState(dataset.getId(),
+                FlashCardsGameState
+                        .builder()
+                        .currentlyLearnedTranslationUnit(translationUnit1)
+                        .learnedTranslationUnitsIdsList(Collections.emptyList())
+                        .notLearnedTranslationUnitsIdsQueue(
+                                new LinkedList<>(List.of(translationUnit2.getId(), translationUnit3.getId())))
+                        .build());
+
+        markCurrentTranslationUnitAsLearned(dataset);
+
+        validateFlashcardsGameState(dataset.getId(),
+                FlashCardsGameState
+                        .builder()
+                        .currentlyLearnedTranslationUnit(translationUnit2)
+                        .learnedTranslationUnitsIdsList(List.of(translationUnit1.getId()))
+                        .notLearnedTranslationUnitsIdsQueue(
+                                new LinkedList<>(List.of(translationUnit3.getId())))
+                        .build());
+
+        markCurrentTranslationUnitAsLearned(dataset);
+
+        validateFlashcardsGameState(dataset.getId(),
+                FlashCardsGameState
+                        .builder()
+                        .currentlyLearnedTranslationUnit(translationUnit3)
+                        .learnedTranslationUnitsIdsList(List.of(translationUnit1.getId(), translationUnit2.getId()))
+                        .notLearnedTranslationUnitsIdsQueue(new LinkedList<>())
+                        .build());
+
+        markCurrentTranslationUnitAsLearned(dataset);
+
+        validateFlashcardsGameState(dataset.getId(),
+                FlashCardsGameState
+                        .builder()
+                        .currentlyLearnedTranslationUnit(null)
+                        .learnedTranslationUnitsIdsList(
+                                List.of(translationUnit1.getId(), translationUnit2.getId(), translationUnit3.getId()))
+                        .notLearnedTranslationUnitsIdsQueue(new LinkedList<>())
+                        .build());
+
+        unmarkLearnedTranslationUnit(dataset, translationUnit1);
+
+        validateFlashcardsGameState(dataset.getId(),
+                FlashCardsGameState
+                        .builder()
+                        .currentlyLearnedTranslationUnit(translationUnit1)
+                        .learnedTranslationUnitsIdsList(List.of(translationUnit2.getId(), translationUnit3.getId()))
+                        .notLearnedTranslationUnitsIdsQueue(new LinkedList<>())
+                        .build());
+
+        unmarkLearnedTranslationUnit(dataset, translationUnit2);
+
+        validateFlashcardsGameState(dataset.getId(),
+                FlashCardsGameState
+                        .builder()
+                        .currentlyLearnedTranslationUnit(translationUnit1)
+                        .learnedTranslationUnitsIdsList(List.of(translationUnit3.getId()))
+                        .notLearnedTranslationUnitsIdsQueue(new LinkedList<>(List.of(translationUnit2.getId())))
+                        .build());
+
+        repeatCurrentTranslationUnit(dataset);
+
+        validateFlashcardsGameState(dataset.getId(),
+                FlashCardsGameState
+                        .builder()
+                        .currentlyLearnedTranslationUnit(translationUnit2)
+                        .learnedTranslationUnitsIdsList(List.of(translationUnit3.getId()))
+                        .notLearnedTranslationUnitsIdsQueue(new LinkedList<>(List.of(translationUnit1.getId())))
+                        .build());
+
+        repeatCurrentTranslationUnit(dataset);
+
+        validateFlashcardsGameState(dataset.getId(),
+                FlashCardsGameState
+                        .builder()
+                        .currentlyLearnedTranslationUnit(translationUnit1)
+                        .learnedTranslationUnitsIdsList(List.of(translationUnit3.getId()))
+                        .notLearnedTranslationUnitsIdsQueue(new LinkedList<>(List.of(translationUnit2.getId())))
+                        .build());
+
+        finishGameWithoutExpectingError(dataset);
+        finishGameExpectingNoActiveGameError(dataset);
+    }
+
+    private void startGameWithoutExpectingError(LearningDataset dataset) throws Exception {
+        mockMvc.perform(post("/api/v1/learning-datasets/" + dataset.getId() + "/actions/start-flashcards-game"))
+                .andExpect(status().isNoContent());
+    }
+
+    private void startGameExpectingGameAlreadyInProgressError(LearningDataset dataset) throws Exception {
+        mockMvc.perform(post("/api/v1/learning-datasets/" + dataset.getId() + "/actions/start-flashcards-game"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value(Constants.Errors.FLASH_CARDS_GAME_FOR_LEARNING_DATASET_ALREADY_IN_PROGRESS));
+    }
+
+
+    private void markCurrentTranslationUnitAsLearned(LearningDataset dataset) throws Exception {
+        mockMvc.perform(post("/api/v1/learning-datasets/" + dataset.getId() +
+                        "/active-flashcards-game/actions/mark-learned"))
+                .andExpect(status().isNoContent());
+    }
+
+    private void unmarkLearnedTranslationUnit(LearningDataset dataset, TranslationUnit translationUnit) throws Exception {
+        mockMvc.perform(post("/api/v1/learning-datasets/" + dataset.getId() +
+                        "/active-flashcards-game/actions/unmark-learned")
+                        .contentType("application/json")
+                        .content(String.format("{\"id\": %d }", translationUnit.getId())))
+                .andExpect(status().isNoContent());
+    }
+
+    private void repeatCurrentTranslationUnit(LearningDataset dataset) throws Exception {
+        mockMvc.perform(post("/api/v1/learning-datasets/" + dataset.getId() +
+                        "/active-flashcards-game/actions/repeat"))
+                .andExpect(status().isNoContent());
+    }
+
+    private void validateFlashcardsGameState(long learningDatasetId, FlashCardsGameState expectedFlashCardsGameState) throws Exception {
+        ResultActions resultActions = getActiveFlashcardsGameStateResultActions(learningDatasetId);
+        validateCurrentlyLearnedTranslationUnit(expectedFlashCardsGameState, resultActions);
+        validateNotLearnedTranslationUnits(expectedFlashCardsGameState, resultActions);
+        validateLearnedTranslationUnits(expectedFlashCardsGameState, resultActions);
+    }
+
+    private ResultActions getActiveFlashcardsGameStateResultActions(long learningDatasetId) throws Exception {
+        return mockMvc.perform(get("/api/v1/learning-datasets/" +
+                        learningDatasetId +
+                        "/active-flashcards-game/state"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType("application/json"));
+    }
+
+    private void validateCurrentlyLearnedTranslationUnit(FlashCardsGameState flashCardsGameState,
+                                                         ResultActions resultActions) throws Exception {
+        TranslationUnit currentlyLearnedTranslationUnit = flashCardsGameState.getCurrentlyLearnedTranslationUnit();
+        if (currentlyLearnedTranslationUnit == null) {
+            resultActions
+                    .andExpect(jsonPath("$.currentlyLearnedTranslationUnit").value(Matchers.nullValue()));
+        } else {
+            resultActions
+                    .andExpect(jsonPath("$.currentlyLearnedTranslationUnit.id").value(currentlyLearnedTranslationUnit.getId()))
+                    .andExpect(jsonPath("$.currentlyLearnedTranslationUnit.text").value(currentlyLearnedTranslationUnit.getText()))
+                    .andExpect(jsonPath("$.currentlyLearnedTranslationUnit.translation").value(currentlyLearnedTranslationUnit.getTranslation()));
+        }
+    }
+
+    private void validateNotLearnedTranslationUnits(FlashCardsGameState expectedFlashCardsGameState,
+                                                    ResultActions resultActions) throws Exception {
+        Queue<Long> notLearnedTranslationUnitsIdsQueue =
+                expectedFlashCardsGameState.getNotLearnedTranslationUnitsIdsQueue();
+        if (notLearnedTranslationUnitsIdsQueue.isEmpty()) {
+            resultActions.andExpect(jsonPath("$.notLearnedTranslationUnitsIds").isEmpty());
+        } else {
+            for (int el = 0; el < notLearnedTranslationUnitsIdsQueue.size(); el++) {
+                String path = String.format("$.notLearnedTranslationUnitsIds[%d]", el);
+                long id = notLearnedTranslationUnitsIdsQueue.poll();
+                resultActions.andExpect(jsonPath(path).value(id));
+            }
+        }
+    }
+
+    private void validateLearnedTranslationUnits(FlashCardsGameState expectedFlashCardsGameState,
+                                                 ResultActions resultActions) throws Exception {
+        List<Long> learnedTranslationUnitsIdsList = expectedFlashCardsGameState.getLearnedTranslationUnitsIdsList();
+        if (learnedTranslationUnitsIdsList.isEmpty()) {
+            resultActions.andExpect(jsonPath("$.learnedTranslationUnitsIds").isEmpty());
+        } else {
+            for (int el = 0; el < learnedTranslationUnitsIdsList.size(); el++) {
+                String path = String.format("$.learnedTranslationUnitsIds[%d]", el);
+                resultActions.andExpect(jsonPath(path).value(learnedTranslationUnitsIdsList.get(el)));
+            }
+        }
+    }
+
+    private void finishGameWithoutExpectingError(LearningDataset dataset) throws Exception {
+        mockMvc.perform(post("/api/v1/learning-datasets/" + dataset.getId() + "/actions/finish-flashcards-game"))
+                .andExpect(status().isNoContent());
+    }
+
+    private void finishGameExpectingNoActiveGameError(LearningDataset dataset) throws Exception {
+        mockMvc.perform(post("/api/v1/learning-datasets/" + dataset.getId() + "/actions/finish-flashcards-game"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value(Constants.Errors.NO_ACTIVE_FLASH_CARDS_GAME_EXISTS));
     }
 }
