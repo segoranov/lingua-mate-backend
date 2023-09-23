@@ -1,10 +1,7 @@
 package mate.lingua.service;
 
 import lombok.AllArgsConstructor;
-import mate.lingua.Constants;
-import mate.lingua.exception.FlashCardsGameAlreadyExistsException;
-import mate.lingua.exception.NoTranslationUnitsToStartFlashCardsGameException;
-import mate.lingua.exception.ResourceNotFoundException;
+import mate.lingua.exception.service.*;
 import mate.lingua.model.FlashCardsGame;
 import mate.lingua.model.FlashCardsGameState;
 import mate.lingua.model.LearningDataset;
@@ -12,10 +9,7 @@ import mate.lingua.model.TranslationUnit;
 import mate.lingua.repository.FlashCardsGameRepository;
 import org.springframework.stereotype.Service;
 
-import java.text.MessageFormat;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @AllArgsConstructor
@@ -23,27 +17,37 @@ public class FlashCardsGameServiceImpl implements FlashCardsGameService {
 
     private FlashCardsGameRepository flashCardsGameRepository;
     private LearningDatasetService learningDatasetService;
+    private TranslationUnitService translationUnitService;
 
     @Override
-    public FlashCardsGame create(long learningDatasetId) {
+    public void startGame(long learningDatasetId)
+            throws NoTranslationUnitsToStartFlashCardsGameException, FlashCardsGameAlreadyExistsException,
+            LearningDataSetDoesNotExistException {
         validateLearningDataset(learningDatasetId);
 
         LearningDataset learningDataset = learningDatasetService.getById(learningDatasetId).get();
-        return flashCardsGameRepository.save(FlashCardsGame
+        flashCardsGameRepository.save(FlashCardsGame
                 .builder()
                 .flashCardsGameState(createInitialFlashCardsGameState(learningDataset))
                 .learningDataset(learningDataset)
                 .build());
     }
 
-    private void validateLearningDataset(long learningDatasetId) {
-        Optional<LearningDataset> optionalLearningDataset = learningDatasetService.getById(learningDatasetId);
-        if (optionalLearningDataset.isEmpty()) {
-            throw new ResourceNotFoundException(MessageFormat.format(Constants.Errors.LEARNING_DATASET_WITH_ID_0_DOES_NOT_EXIST,
-                    learningDatasetId));
+    @Override
+    public void finishGame(long learningDatasetId)
+            throws NoActiveFlashCardsGameException, LearningDataSetDoesNotExistException {
+        LearningDataset learningDataset = getLearningDataset(learningDatasetId);
+        if (learningDataset.getFlashCardsGame() == null) {
+            throw new NoActiveFlashCardsGameException();
         }
 
-        LearningDataset learningDataset = optionalLearningDataset.get();
+        flashCardsGameRepository.deleteById(learningDataset.getFlashCardsGame().getId());
+    }
+
+    private void validateLearningDataset(long learningDatasetId)
+            throws FlashCardsGameAlreadyExistsException, NoTranslationUnitsToStartFlashCardsGameException,
+            LearningDataSetDoesNotExistException {
+        LearningDataset learningDataset = getLearningDataset(learningDatasetId);
         if (learningDataset.getFlashCardsGame() != null) {
             throw new FlashCardsGameAlreadyExistsException();
         }
@@ -54,36 +58,112 @@ public class FlashCardsGameServiceImpl implements FlashCardsGameService {
     }
 
     private FlashCardsGameState createInitialFlashCardsGameState(LearningDataset learningDataset) {
-        List<Long> translationUnitIds = learningDataset
-                .getTranslationUnits()
-                .stream()
-                .map(TranslationUnit::getId)
-                .toList();
+        Queue<TranslationUnit> translationUnits = new LinkedList<>(learningDataset.getTranslationUnits());
+        TranslationUnit currentlyLearnedTranslationUnit = translationUnits.poll();
+        LinkedList<Long> translationUnitsIds =
+                new LinkedList<>(translationUnits.stream().map(TranslationUnit::getId).toList());
 
         return FlashCardsGameState
                 .builder()
-                .notLearnedTranslationUnitsIds(translationUnitIds)
-                .learnedTranslationUnitsIds(Collections.emptyList())
-                .currentlyLearnedTranslationUnitId(translationUnitIds.get(0))
+                .notLearnedTranslationUnitsIdsQueue(translationUnitsIds)
+                .learnedTranslationUnitsIdsList(Collections.emptyList())
+                .currentlyLearnedTranslationUnit(currentlyLearnedTranslationUnit)
                 .build();
     }
 
     @Override
-    public Optional<FlashCardsGame> getById(long id) {
-        return flashCardsGameRepository.findById(id);
-    }
+    public void markCurrentlyLearnedTranslationUnitAsLearned(long learningDatasetId)
+            throws LearningDataSetDoesNotExistException, NoActiveFlashCardsGameException,
+            NoCurrentlyLearnedTranslationUnitException {
+        FlashCardsGame flashCardsGame = getActiveGame(learningDatasetId);
+        FlashCardsGameState flashCardsGameState = flashCardsGame.getFlashCardsGameState();
 
-    @Override
-    public List<FlashCardsGame> getFlashCardsGames() {
-        return flashCardsGameRepository.findAll();
-    }
-
-    @Override
-    public boolean deleteById(long id) {
-        if (flashCardsGameRepository.existsById(id)) {
-            flashCardsGameRepository.deleteById(id);
-            return true;
+        if (flashCardsGameState.getCurrentlyLearnedTranslationUnit() == null) {
+            throw new NoCurrentlyLearnedTranslationUnitException();
         }
-        return false;
+
+        TranslationUnit currentlyLearnedTranslationUnit = flashCardsGameState.getCurrentlyLearnedTranslationUnit();
+        flashCardsGameState.getLearnedTranslationUnitsIdsList().add(currentlyLearnedTranslationUnit.getId());
+        flashCardsGameState.setCurrentlyLearnedTranslationUnit(getNextToLearnTranslationUnit(flashCardsGameState));
+        flashCardsGameRepository.save(flashCardsGame);
+    }
+
+    @Override
+    public void markCurrentlyLearnedTranslationUnitForRepetition(long learningDatasetId) throws LearningDataSetDoesNotExistException, NoActiveFlashCardsGameException, NoCurrentlyLearnedTranslationUnitException {
+        FlashCardsGame flashCardsGame = getActiveGame(learningDatasetId);
+        FlashCardsGameState flashCardsGameState = flashCardsGame.getFlashCardsGameState();
+
+        if (flashCardsGameState.getCurrentlyLearnedTranslationUnit() == null) {
+            throw new NoCurrentlyLearnedTranslationUnitException();
+        }
+
+        TranslationUnit currentlyLearnedTranslationUnit = flashCardsGameState.getCurrentlyLearnedTranslationUnit();
+        flashCardsGameState.getNotLearnedTranslationUnitsIdsQueue().offer(currentlyLearnedTranslationUnit.getId());
+        flashCardsGameState.setCurrentlyLearnedTranslationUnit(getNextToLearnTranslationUnit(flashCardsGameState));
+        flashCardsGameRepository.save(flashCardsGame);
+    }
+
+    private TranslationUnit getNextToLearnTranslationUnit(FlashCardsGameState flashCardsGameState) {
+        if (flashCardsGameState.getNotLearnedTranslationUnitsIdsQueue().isEmpty()) {
+            // This means that all are learned and hence the next will be null, i.e. nothing to learn more
+            return null;
+        }
+
+        long nextToLearnTranslationUnitId = flashCardsGameState.getNotLearnedTranslationUnitsIdsQueue().poll();
+        return translationUnitService.getById(nextToLearnTranslationUnitId).get(); // TODO what if it does not exist?
+    }
+
+    @Override
+    public void unmarkLearnedTranslationUnit(long learningDatasetId, long translationUnitId)
+            throws LearningDataSetDoesNotExistException, NoActiveFlashCardsGameException,
+            TranslationUnitIsNotLearnedAndCannotBeUnmarkedException, TranslationUnitDoesNotExistException {
+        FlashCardsGame flashCardsGame = getActiveGame(learningDatasetId);
+        FlashCardsGameState flashCardsGameState = flashCardsGame.getFlashCardsGameState();
+
+        TranslationUnit translationUnit = getTranslationUnit(translationUnitId);
+
+        List<Long> learnedTranslationUnitsIdsList = flashCardsGameState.getLearnedTranslationUnitsIdsList();
+        if (!learnedTranslationUnitsIdsList.contains(translationUnit.getId())) {
+            throw new TranslationUnitIsNotLearnedAndCannotBeUnmarkedException();
+        }
+
+        learnedTranslationUnitsIdsList.remove(translationUnit.getId());
+        Queue<Long> notLearnedTranslationUnitsIdsQueue = flashCardsGameState.getNotLearnedTranslationUnitsIdsQueue();
+
+        if (flashCardsGameState.getCurrentlyLearnedTranslationUnit() != null) {
+            notLearnedTranslationUnitsIdsQueue.offer(translationUnit.getId());
+        } else {
+            flashCardsGameState.setCurrentlyLearnedTranslationUnit(translationUnit);
+        }
+
+        flashCardsGameRepository.save(flashCardsGame);
+    }
+
+    @Override
+    public FlashCardsGame getActiveGame(long learningDatasetId)
+            throws NoActiveFlashCardsGameException, LearningDataSetDoesNotExistException {
+        LearningDataset learningDataset = getLearningDataset(learningDatasetId);
+        if (learningDataset.getFlashCardsGame() == null) {
+            throw new NoActiveFlashCardsGameException();
+        }
+        return learningDataset.getFlashCardsGame();
+    }
+
+    private LearningDataset getLearningDataset(long learningDatasetId) throws LearningDataSetDoesNotExistException {
+        Optional<LearningDataset> optionalLearningDataset = learningDatasetService.getById(learningDatasetId);
+        if (optionalLearningDataset.isEmpty()) {
+            throw LearningDataSetDoesNotExistException.builder().learningDataSetId(learningDatasetId).build();
+        }
+
+        return optionalLearningDataset.get();
+    }
+
+    private TranslationUnit getTranslationUnit(long translationUnitId) throws TranslationUnitDoesNotExistException {
+        Optional<TranslationUnit> optionalTranslationUnit = translationUnitService.getById(translationUnitId);
+        if (optionalTranslationUnit.isEmpty()) {
+            throw TranslationUnitDoesNotExistException.builder().translationUnitId(translationUnitId).build();
+        }
+
+        return optionalTranslationUnit.get();
     }
 }

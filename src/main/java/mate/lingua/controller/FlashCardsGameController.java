@@ -2,18 +2,17 @@ package mate.lingua.controller;
 
 import lombok.AllArgsConstructor;
 import mate.lingua.Constants;
+import mate.lingua.exception.BadRequestException;
 import mate.lingua.exception.ResourceNotFoundException;
+import mate.lingua.exception.service.*;
 import mate.lingua.model.FlashCardsGame;
+import mate.lingua.model.FlashCardsGameState;
+import mate.lingua.model.IdRequest;
 import mate.lingua.service.FlashCardsGameService;
-import mate.lingua.service.LearningDatasetService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import java.net.URI;
 import java.text.MessageFormat;
-import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -21,74 +20,99 @@ import java.util.Optional;
 public class FlashCardsGameController {
 
     private FlashCardsGameService flashCardsGameService;
-    private LearningDatasetService learningDatasetService;
 
-
-    @PostMapping(value = "/learning-datasets/{learningDatasetId}/flashcards-games",
-            consumes = "application/json",
+    @PostMapping(value = "/learning-datasets/{learningDatasetId}/actions/start-flashcards-game",
             produces = "application/json")
-    public ResponseEntity<FlashCardsGame> createFlashCardsGame(@PathVariable("learningDatasetId") Long learningDatasetId) {
-        validateLearningDatasetExists(learningDatasetId);
-
-        FlashCardsGame createdFlashCardsGame = flashCardsGameService.create(learningDatasetId);
-
-        URI location = ServletUriComponentsBuilder
-                .fromCurrentRequest()
-                .path("/{id}")
-                .buildAndExpand(createdFlashCardsGame.getId())
-                .toUri();
-
-        return ResponseEntity
-                .created(location)
-                .body(createdFlashCardsGame);
-    }
-
-    @DeleteMapping("/learning-datasets/{learningDatasetId}/flashcards-games/{flashCardsGameId}")
-    public ResponseEntity<FlashCardsGame> deleteFlashCardsGame(@PathVariable("learningDatasetId") Long learningDatasetId,
-                                                               @PathVariable("flashCardsGameId") Long flashCardsGameId
-    ) {
-        validateLearningDatasetExists(learningDatasetId);
-
-        if (flashCardsGameService.deleteById(flashCardsGameId)) {
-            return ResponseEntity.noContent().build();
-        }
-
-        throw new ResourceNotFoundException(MessageFormat.format(Constants.Errors.FLASH_CARDS_GAME_WITH_ID_0_DOES_NOT_EXIST, flashCardsGameId));
-    }
-
-
-    @PatchMapping(value = "/learning-datasets/{learningDatasetId}/flashcards-games/{flashCardsGameId}",
-            consumes = "application/json",
-            produces = "application/json")
-    ResponseEntity<FlashCardsGame> patchFlashCardsGame() {
-        // TODO
-        return null;
-    }
-
-    @GetMapping(value = "/learning-datasets/{learningDatasetId}/flashcards-games/{flashCardsGameId}",
-            produces = "application/json")
-    ResponseEntity<FlashCardsGame> getFlashCardsGame(@PathVariable("learningDatasetId") Long learningDatasetId,
-                                                     @PathVariable("flashCardsGameId") Long flashCardsGameId) {
-        validateLearningDatasetExists(learningDatasetId);
-
-        Optional<FlashCardsGame> optionalFlashCardsGame = flashCardsGameService.getById(flashCardsGameId);
-        if (optionalFlashCardsGame.isEmpty()) {
-            throw new ResourceNotFoundException(MessageFormat.format(Constants.Errors.FLASH_CARDS_GAME_WITH_ID_0_DOES_NOT_EXIST, flashCardsGameId));
-        }
-        return ResponseEntity.ok(optionalFlashCardsGame.get());
-    }
-
-    @GetMapping(value = "/learning-datasets/{learningDatasetId}/flashcards-games", produces = "application/json")
-    public ResponseEntity<List<FlashCardsGame>> getFlashCardGames(@PathVariable("learningDatasetId") Long learningDatasetId) {
-        validateLearningDatasetExists(learningDatasetId);
-
-        List<FlashCardsGame> learningDatasets = flashCardsGameService.getFlashCardsGames();
-        return ResponseEntity.ok(learningDatasets);
-    }
-
-    private void validateLearningDatasetExists(Long learningDatasetId) {
-        if (learningDatasetService.getById(learningDatasetId).isEmpty()) {
+    public ResponseEntity<Void> startFlashCardsGame(@PathVariable("learningDatasetId") Long learningDatasetId) {
+        try {
+            flashCardsGameService.startGame(learningDatasetId);
+        } catch (NoTranslationUnitsToStartFlashCardsGameException e) {
+            throw new BadRequestException(Constants.Errors.CANNOT_START_FLASH_CARDS_GAME_BECAUSE_NO_TRANSLATION_UNITS_EXIST_IN_LEARNING_DATASET);
+        } catch (FlashCardsGameAlreadyExistsException e) {
+            throw new BadRequestException(Constants.Errors.FLASH_CARDS_GAME_FOR_LEARNING_DATASET_ALREADY_IN_PROGRESS);
+        } catch (LearningDataSetDoesNotExistException e) {
             throw new ResourceNotFoundException(MessageFormat.format(Constants.Errors.LEARNING_DATASET_WITH_ID_0_DOES_NOT_EXIST, learningDatasetId));
         }
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping(value = "/learning-datasets/{learningDatasetId}/actions/finish-flashcards-game")
+    public ResponseEntity<Void> finishFlashCardsGame(@PathVariable("learningDatasetId") Long learningDatasetId) {
+        try {
+            flashCardsGameService.finishGame(learningDatasetId);
+        } catch (NoActiveFlashCardsGameException e) {
+            throw new BadRequestException(Constants.Errors.NO_ACTIVE_FLASH_CARDS_GAME_EXISTS);
+        } catch (LearningDataSetDoesNotExistException e) {
+            throw new ResourceNotFoundException(MessageFormat.format(Constants.Errors.LEARNING_DATASET_WITH_ID_0_DOES_NOT_EXIST, learningDatasetId));
+        }
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping(value = "/learning-datasets/{learningDatasetId}/active-flashcards-game/state",
+            produces = "application/json")
+    ResponseEntity<FlashCardsGameState> getActiveFlashCardsGameState(@PathVariable("learningDatasetId") Long learningDatasetId) {
+        return ResponseEntity.ok(getActiveGame(learningDatasetId).getFlashCardsGameState());
+    }
+
+    @PostMapping(value = "/learning-datasets/{learningDatasetId}/active-flashcards-game/actions/mark-learned")
+    public ResponseEntity<Void> markCurrentlyLearnedTranslationUnitAsLearned(@PathVariable("learningDatasetId") Long learningDatasetId) {
+        try {
+            flashCardsGameService.markCurrentlyLearnedTranslationUnitAsLearned(learningDatasetId);
+        } catch (LearningDataSetDoesNotExistException e) {
+            throw new ResourceNotFoundException(MessageFormat.format(Constants.Errors.LEARNING_DATASET_WITH_ID_0_DOES_NOT_EXIST, learningDatasetId));
+        } catch (NoActiveFlashCardsGameException e) {
+            throw new BadRequestException(Constants.Errors.NO_ACTIVE_FLASH_CARDS_GAME_EXISTS);
+        } catch (NoCurrentlyLearnedTranslationUnitException e) {
+            throw new BadRequestException(Constants.Errors.ALL_TRANSLATION_UNITS_ARE_ALREADY_LEARNED);
+        }
+
+        return ResponseEntity.noContent().build();
+    }
+
+    private FlashCardsGame getActiveGame(long learningDatasetId) {
+        try {
+            return flashCardsGameService.getActiveGame(learningDatasetId);
+        } catch (NoActiveFlashCardsGameException e) {
+            throw new BadRequestException(Constants.Errors.NO_ACTIVE_FLASH_CARDS_GAME_EXISTS);
+        } catch (LearningDataSetDoesNotExistException e) {
+            throw new ResourceNotFoundException(MessageFormat.format(Constants.Errors.LEARNING_DATASET_WITH_ID_0_DOES_NOT_EXIST, learningDatasetId));
+        }
+    }
+
+    @PostMapping(value = "/learning-datasets/{learningDatasetId}/active-flashcards-game/actions/repeat")
+    public ResponseEntity<Void> markCurrentlyLearnedTranslationUnitForRepetition(
+            @PathVariable("learningDatasetId") Long learningDatasetId) {
+        try {
+            flashCardsGameService.markCurrentlyLearnedTranslationUnitForRepetition(learningDatasetId);
+        } catch (LearningDataSetDoesNotExistException e) {
+            throw new ResourceNotFoundException(MessageFormat.format(Constants.Errors.LEARNING_DATASET_WITH_ID_0_DOES_NOT_EXIST, learningDatasetId));
+        } catch (NoActiveFlashCardsGameException e) {
+            throw new BadRequestException(Constants.Errors.NO_ACTIVE_FLASH_CARDS_GAME_EXISTS);
+        } catch (NoCurrentlyLearnedTranslationUnitException e) {
+            throw new BadRequestException(Constants.Errors.ALL_TRANSLATION_UNITS_ARE_ALREADY_LEARNED);
+        }
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping(value = "/learning-datasets/{learningDatasetId}/active-flashcards-game/actions/unmark-learned",
+            consumes = "application/json")
+    public ResponseEntity<Void> unmarkLearnedTranslationUnit(@RequestBody IdRequest translationUnitIdRequest,
+                                                             @PathVariable("learningDatasetId") Long learningDatasetId) {
+        try {
+            flashCardsGameService.unmarkLearnedTranslationUnit(learningDatasetId, translationUnitIdRequest.getId());
+        } catch (LearningDataSetDoesNotExistException e) {
+            throw new ResourceNotFoundException(MessageFormat.format(Constants.Errors.LEARNING_DATASET_WITH_ID_0_DOES_NOT_EXIST, learningDatasetId));
+        } catch (NoActiveFlashCardsGameException e) {
+            throw new BadRequestException(Constants.Errors.NO_ACTIVE_FLASH_CARDS_GAME_EXISTS);
+        } catch (TranslationUnitIsNotLearnedAndCannotBeUnmarkedException e) {
+            throw new BadRequestException(Constants.Errors.CANNOT_UNMARK_TRANSLATION_UNIT_WHICH_IS_NOT_LEARNED);
+        } catch (TranslationUnitDoesNotExistException e) {
+            throw new ResourceNotFoundException(MessageFormat.format(Constants.Errors.TRANSLATION_UNIT_WITH_ID_0_DOES_NOT_EXIST, translationUnitIdRequest.getId()));
+        }
+
+        return ResponseEntity.noContent().build();
     }
 }

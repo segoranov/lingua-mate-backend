@@ -1,16 +1,27 @@
 package mate.lingua.service;
 
+import mate.lingua.exception.service.*;
 import mate.lingua.model.FlashCardsGame;
 
-import java.util.List;
-import java.util.Optional;
-
 public interface FlashCardsGameService {
-    FlashCardsGame create(long learningDatasetId);
+    void startGame(long learningDatasetId) throws NoTranslationUnitsToStartFlashCardsGameException,
+            FlashCardsGameAlreadyExistsException, LearningDataSetDoesNotExistException;
 
-    Optional<FlashCardsGame> getById(long id);
+    void finishGame(long learningDatasetId) throws NoActiveFlashCardsGameException,
+            LearningDataSetDoesNotExistException;
 
-    List<FlashCardsGame> getFlashCardsGames();
+    void markCurrentlyLearnedTranslationUnitAsLearned(long learningDatasetId)
+            throws LearningDataSetDoesNotExistException, NoActiveFlashCardsGameException,
+            NoCurrentlyLearnedTranslationUnitException;
 
-    boolean deleteById(long id);
+    void markCurrentlyLearnedTranslationUnitForRepetition(long learningDatasetId) throws LearningDataSetDoesNotExistException,
+            NoActiveFlashCardsGameException, NoCurrentlyLearnedTranslationUnitException;
+
+    FlashCardsGame getActiveGame(long learningDatasetId) throws NoActiveFlashCardsGameException,
+            LearningDataSetDoesNotExistException;
+
+
+    void unmarkLearnedTranslationUnit(long learningDatasetId, long translationUnitId)
+            throws LearningDataSetDoesNotExistException, NoActiveFlashCardsGameException,
+            TranslationUnitIsNotLearnedAndCannotBeUnmarkedException, TranslationUnitDoesNotExistException;
 }

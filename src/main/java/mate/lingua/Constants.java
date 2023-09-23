@@ -10,7 +10,10 @@ public class Constants {
                 "Learning dataset with id {0} does not exist";
         public static final String TRANSLATION_UNIT_WITH_ID_0_DOES_NOT_EXIST =
                 "Translation unit with id {0} does not exist";
-        public static final String FLASH_CARDS_GAME_WITH_ID_0_DOES_NOT_EXIST =
-                "Flash cards game with id {0} does not exist";
+        public static final String NO_ACTIVE_FLASH_CARDS_GAME_EXISTS = "No active flash cards game exists";
+        public static final String ALL_TRANSLATION_UNITS_ARE_ALREADY_LEARNED =
+                "All translation units are already learned";
+        public static final String CANNOT_UNMARK_TRANSLATION_UNIT_WHICH_IS_NOT_LEARNED =
+                "Cannot unmark translation unit which is not learned";
     }
 }

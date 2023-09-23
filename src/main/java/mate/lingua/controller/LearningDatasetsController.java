@@ -108,6 +108,7 @@ public class LearningDatasetsController {
     @ResponseStatus(value = HttpStatus.NO_CONTENT)
     public ResponseEntity<Void> deleteTranslationUnit(@PathVariable("learningDatasetId") Long learningDatasetId,
                                                       @PathVariable("translationUnitId") Long translationUnitId) {
+        // TODO if a game is in progress, and we delete unit, it will probably break something, investigate this
         if (learningDatasetService.getById(learningDatasetId).isEmpty()) {
             throw new ResourceNotFoundException(MessageFormat.format(Constants.Errors.LEARNING_DATASET_WITH_ID_0_DOES_NOT_EXIST, learningDatasetId));
         }

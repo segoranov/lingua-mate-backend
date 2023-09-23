@@ -12,8 +12,6 @@ import lombok.*;
 @Getter
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class TranslationUnit {
-    // TODO validation
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
