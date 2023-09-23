@@ -12,13 +12,5 @@ public class Constants {
                 "Translation unit with id {0} does not exist";
         public static final String FLASH_CARDS_GAME_WITH_ID_0_DOES_NOT_EXIST =
                 "Flash cards game with id {0} does not exist";
-        public static final String FLASH_CARDS_GAME_STATE_TRANSLATION_UNIT_IDS_DO_NOT_MATCH_THOSE_FROM_THE_CORRESPONDING_LEARNING_DATASET =
-                "Flash cards game state translation unit IDs do no match those from the corresponding learning dataset";
-
-        public static final String FLASH_CARDS_GAME_STATE_IS_INCOMPLETE = "Flash cards game state is incomplete";
-        public static final String CURRENTLY_LEARNED_TRANSLATION_UNIT_ID_IS_NOT_VALID =
-                "Currently learned translation unit id is not valid";
-        public static final String CURRENTLY_LEARNED_TRANSLATION_UNIT_ID_CANNOT_BE_PRESENT_IN_LEARNED_TRANSLATION_UNIT_IDS_LIST =
-                "Currently learned translation unit id cannot be present in the learned translation unit ids list";
     }
 }

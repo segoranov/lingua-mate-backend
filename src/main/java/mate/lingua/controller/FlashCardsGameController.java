@@ -56,20 +56,13 @@ public class FlashCardsGameController {
         throw new ResourceNotFoundException(MessageFormat.format(Constants.Errors.FLASH_CARDS_GAME_WITH_ID_0_DOES_NOT_EXIST, flashCardsGameId));
     }
 
+
     @PatchMapping(value = "/learning-datasets/{learningDatasetId}/flashcards-games/{flashCardsGameId}",
             consumes = "application/json",
             produces = "application/json")
-    ResponseEntity<FlashCardsGame> patchFlashCardsGame(@RequestBody FlashCardsGame flashCardsGame,
-                                                       @PathVariable("learningDatasetId") Long learningDatasetId,
-                                                       @PathVariable("flashCardsGameId") Long flashCardsGameId) {
-        validateLearningDatasetExists(learningDatasetId);
-        Optional<FlashCardsGame> optionalFlashCardsGame = flashCardsGameService.getById(flashCardsGameId);
-        if (optionalFlashCardsGame.isEmpty()) {
-            throw new ResourceNotFoundException(MessageFormat.format(Constants.Errors.FLASH_CARDS_GAME_WITH_ID_0_DOES_NOT_EXIST, flashCardsGameId));
-        }
-        FlashCardsGame updatedFlashCardsGame = flashCardsGameService.updateState(flashCardsGameId,
-                flashCardsGame.getFlashCardsGameState());
-        return ResponseEntity.ok(updatedFlashCardsGame);
+    ResponseEntity<FlashCardsGame> patchFlashCardsGame() {
+        // TODO
+        return null;
     }
 
     @GetMapping(value = "/learning-datasets/{learningDatasetId}/flashcards-games/{flashCardsGameId}",
